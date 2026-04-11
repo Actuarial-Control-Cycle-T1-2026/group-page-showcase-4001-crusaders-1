@@ -15,7 +15,7 @@ The 4001 Crusaders actuarial team at Galaxy General Insurance Company (GGIC) hav
 | Workers' Compensation | Đ17.01M | Đ8.82M | 51.80% | Đ3.26M |
 | Business Interruption | Đ206.25M | Đ160.88M | 78.00% | Đ46.37M |
 
-
+The following page will navigate each of the 4 hazards separately, exploring how the unique risks and challenges associated with each of them influenced our modelling choices and premium calculation. 
 
 ## Cargo Loss
 ### Data Exploration
