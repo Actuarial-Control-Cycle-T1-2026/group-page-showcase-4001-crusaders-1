@@ -21,7 +21,7 @@ The 4001 Crusaders actuarial team at Galaxy General Insurance Company (GGIC) hav
 ### Data Exploration
 Cargo loss presents an extremely challenging and risky hazard from both a frequency and severity perspective. Historical shipment claims reveal that 18.23% of shipments resulted in at least 1 claim with claim counts ranging up to 5 per shipment. This is coupled with the high claim severity, with the average and median claim loss being Đ7.8M and Đ382k respectively. The histogram of claim size severity also illustrates how it has a highly skewed bimodal distribution. 
 
-![My plot](cargo_loss\bimodal_cargo_loss.png)
+![My plot](cargo_loss/bimodal_cargo_loss.png)
 
 The most notable covariate influencing claim severity size was cargo type, with gold and platinum cargo shipments specifically having a disproportionate impact on the higher claim sizes relative to other cargo types. The plot below reveals the average claim size of gold and platinum shipments were Đ10M and Đ43M respectively, much larger than the remaining cargo types whose average is less than Đ1M. A further analysis into the tail risk reveals that 88.5% of the 5% largest claims were gold cargo shipments despite all cargo types having an equal distribution. Platinum was the other cargo type making up the remaining 11.4%.
 
