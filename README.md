@@ -62,7 +62,7 @@ sev_dispersion_large<-summary(cargo_sev_large_model)$dispersion
 
 
 
-Once the GLM models were built, 10000 Monte-Carlo simulations were used to estimate the portfolio claim size. Firstly a synthetic shipment portfolio dataset utilising the limited fleet dataset we had. We modelled the number of shipments as a binomial random variable with parameters chosen to be in line with the maximum number of shipments allowed by the policy and ensure the expected shipments is equal to the number of shipments needed in each solar system to meet the CQMC long-term mining production goals. Covariate based data was sampled from the historical dataset with slight assumption changes being made based off the qualitative descriptions we had regarding solar systems attributes. For example, regarding how we sampled the route risk covariate, we utilised the baseline probabilities implied by the dataset and then increased probabilities of higher route risks for solar systems like Oryn to reflect its risk associated with fluctuating gravitational gradients.
+Once the GLM models were built, 10000 Monte-Carlo simulations were used to estimate the portfolio claim size. Firstly a synthetic shipment portfolio dataset utilising the limited fleet dataset we had. We modelled the number of shipments as a binomial random variable with parameters chosen to be in line with the maximum number of shipments allowed by the policy and the expected shipments to be equal to the number of shipments needed in each solar system to meet the CQMC long-term mining production goals. Covariate based data was sampled from the historical dataset with slight assumption changes being made based off the qualitative descriptions we had regarding solar systems attributes. For example, regarding how we sampled the route risk covariate, we utilised the baseline probabilities implied by the dataset and then increased probabilities of higher route risks for solar systems like Oryn to reflect its risk associated with fluctuating gravitational gradients.
 
 ```r
 route_risk_draw<-function(solar_system, length){
@@ -76,7 +76,8 @@ route_risk_draw<-function(solar_system, length){
 ```
 
 
-Once the shipment portfolio was created, simulations were run utilising poison and gamma distribution implied by our frequency and severity GLM modelling. Doing it as such ensured that claims followed distributions based on their covariate compositions as opposed to fitting a gamma distribution on the overall claim severity profile which would fail to differentiate the risk associated with covariate inputs.  
+Once the shipment portfolio was created, simulations were run utilising the poison and gamma distribution implied by our frequency and severity GLM modelling. This allowed claims to follow a distribution based on their covariate compositions as opposed to fitting a gamma distribution on the overall claim severity profile which would fail to differentiate the covariate risk.
+
 ```r
 n_sim <- 10000
 n_rows <- nrow(practice_data_freq_helionis)
