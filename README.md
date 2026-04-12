@@ -141,3 +141,47 @@ The most significant operational drivers appear to be the energy backup score, s
 Considering the highly skewed, "all-or-nothing" loss behaviour, the BI product is designed to strictly control tail risk and pricing uncertainty. Our benefit structure incorporates a Đ28,000 deductible to ensure that minor operational disruptions are retained by CQMC, preventing low impact "noise" from inflating the risk premium. The policy limit is set at Đ1,426,000 to truncate exposure to the extreme severity events that cluster at the upper threshold of the distribution. Without these rigorous controls, the underlying claims profile is too volatile to support an affordable or sustainable indemnity product.
 To further stabilise the portfolio, coverage is restricted to high-certainty triggers such as core system failures within mandated maintenance windows or documented interruptions in the Quantum-secured supply chain. Specific exclusions were necessary to mitigate moral hazard; as such, losses resulting from neglected infrastructure or maintenance falling below required benchmarks are excluded from cover. Furthermore, legal and environmental penalties from the Interstellar Court of Environmental Justice are excluded to ensure the product remains focused on operational system failures rather than regulatory liabilities. This focused framework allows GGIC to offer essential coverage while remaining protected against the most extreme loss outcomes.
 
+## Equipment Failure
+
+### Data Exploration
+
+Analysis of the equipment failure hazard reveals various risks that CQMC will have face with their mining operations. Across all three solar systems, CQMC have a total of 4,730 assets which are prone to environmental degradation and or unforeseen damage. Based on historical data, systems similar to Oryn Delta present the highest risk, with an average risk index of 0.62 and heavy tail losses as indicated by a Kurtosis of 404 and skewness of 16.3. The Helionis Cluster and Bayesian System are both significantly less risky as seen through the risks index of 0.49 and 0.53 respectively. 
+
+<p align="center">
+  <img src="equipment_failure/severity_plot.png" width="400" />
+  <img src="equipment_failure/frequency_plot.png" width="400" />
+</p>
+
+As for the risk derived from equipment types, Quantum Bores have the highest risk with an average risk index of 0.8. The 99% expected shortfall of Đ495,958.70 further illustrates the severity of losses related to this equipment type. Due to the nature of equipment failure, taking on insurance for high-risk incidents only if the equipment is well-maintained will be an ideal consideration CQMC.
+
+<p align="center">
+  <img src="equipment_failure/severity_by_eq_plot.png" width="400" />
+  <img src="equipment_failure/claim_count_eq.png" width="400" />
+</p>
+
+### Premium Modelling
+
+For the pricing and capital modelling, various models were applied in order to effectively represent the risks associated with equipment failure. For the premium pricing, a LASSO GLM was utilised for the severity under a gamma distribution and a Poisson model for the frequency. 
+
+```r
+## Severity Model
+sev_lasso <- cv.glmnet(X_sev_train, sev_train$claim_amount, 
+                       family = Gamma(link = "log"), 
+                       alpha = 1)
+
+## Frequency Model
+freq_lasso <- cv.glmnet(X_freq_train, freq_train$claim_count, family = "poisson", 
+                        offset = log(freq_train$exposure), alpha = 1)
+```
+
+Given the high risk associated with equipment failure, it would be ideal to protect high risk equipment, hence a deductible was applied to each solar system to reduce the effect on capital by attritional claims. Furthermore, since there was no given data for the Oryn Delta and Bayesian System, Bühlmann credibility weighting was utilised to account for the approximation. After training the GLM, they were tested on an unseen subset of the data to generate pure premiums which were equivalent to the expected loss for each claim. With this, premiums were averaged by solar system and loadings were applied to obtain a gross premium. The loadings include a 5% profit load for which 2% goes towards an environmental loading and a 7% variable expense loading. This yielded a 1-year total premium of Đ44.61M, which provides coverage for all assets, both and active and idle. The 10-year premium is Đ436.75M which accounts for inflation and discount rates.
+
+
+### Capital Modelling
+
+To determine capital requirements, a monte-carlo simulation was run to estimate the yearly expected losses for each solar system. In order to achieve this, maximum likelihood estimation (MLE) was utilised to determine the theoretical distributions for severity and frequency. In all cases, the log-normal and negative binomial distributions were the best fit for each solar system. Then, 100,000 iterations of the loop were run in which there was a 1% chance of an intergalactic shock event which would increase claim severity by 5 times. Ultimately, the 99% expected shortfall is Đ129.1M and the 10-year capital is Đ420.9M. To understand the assumptions in regard to the parameters, sensitivity analysis was conducted where each variable in the simulation was adjusted to understand how capital requirements may change. From this it became evident that the impact of the joint shock factor is extremely sensitive and could be a point for revision with future data.
+
+<p align="center">
+  <img src="equipment_failure/sensitivity_analysis.png" width="400" />
+  <img src="equipment_failure/modelled_distribution.png" width="400" />
+</p>
