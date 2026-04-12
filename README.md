@@ -141,6 +141,74 @@ The most significant operational drivers appear to be the energy backup score, s
 Considering the highly skewed, "all-or-nothing" loss behaviour, the BI product is designed to strictly control tail risk and pricing uncertainty. Our benefit structure incorporates a Đ28,000 deductible to ensure that minor operational disruptions are retained by CQMC, preventing low impact "noise" from inflating the risk premium. The policy limit is set at Đ1,426,000 to truncate exposure to the extreme severity events that cluster at the upper threshold of the distribution. Without these rigorous controls, the underlying claims profile is too volatile to support an affordable or sustainable indemnity product.
 To further stabilise the portfolio, coverage is restricted to high-certainty triggers such as core system failures within mandated maintenance windows or documented interruptions in the Quantum-secured supply chain. Specific exclusions were necessary to mitigate moral hazard; as such, losses resulting from neglected infrastructure or maintenance falling below required benchmarks are excluded from cover. Furthermore, legal and environmental penalties from the Interstellar Court of Environmental Justice are excluded to ensure the product remains focused on operational system failures rather than regulatory liabilities. This focused framework allows GGIC to offer essential coverage while remaining protected against the most extreme loss outcomes.
 
+### Modelling
+Naive Poisson was firstly utilised for frequency modelling to explore significant covariates, however as overdispersion is realised, we selected a Zero-Inflated Negative Binomial (ZINB) frequency model with a constant zero-inflation parameter, which demonstrated superior performance in capturing the portfolio's unique risk profile. This modeling choice reflects the observation that approximately 88% of the portfolio resides in a "structural zero" state, a universal behaviour likely driven by the autonomous extraction fleets and self-healing hulls utilised across all systems. ZINB also yields lower AIC, BIC and higher likelihood than Zero-Inflated Poisson or Negative Binomial alone, whereas these statistics would be less favourable if covariates are used for the zero-inflated hurdles rather than a constant.
+
+```r
+library(glmmTMB)
+# Fitting ZINB with constant zero-inflation (ziformula = ~ 1)
+zinb_model_basic <- glmmTMB(
+  claim_count ~ solar_system + production_load + energy_backup_score + 
+    supply_chain_index + avg_crew_exp + maintenance_freq + 
+    safety_compliance + offset(log(exposure)),
+  ziformula = ~ 1,      
+  data = filtered.bus.interupt.freq,
+  family = nbinom1 # nbinom1 was selected over nbinom2 based on AIC/BIC
+)
+summary(zinb_model_basic)
+```
+
+
+For severity modelling, we employed a Gamma GLM with a log-link function, which is ideally suited for continuous, positive-valued insurance data. Although the raw data exhibits heavy negative skewness due to the Đ1,426,000 policy limit "clumping" the results, the Gamma distribution (shape parameter 1.41, scale parameter 1,085,000) provides a mathematically robust framework for capturing the underlying attritional loss behaviour. To ensure the model accurately reflects the actual risk transfer, the data was strictly bounded between the Đ28,000 deductible and the Đ1,426,000 policy limit prior to fitting. The resulting dispersion parameter (0.708) was critical in parameterising our Monte Carlo simulation, allowing us to account for the variance nature of BI events while ensuring that projected costs remain sensitive to exposure and safety compliance levels across Epsilon, Zeta, and the HC.
+
+```r
+# Pre-processing: Bounding claims by deductible and policy limit
+filtered.bus.interupt.sev <- bus.interupt.sev %>%
+  mutate(claim_amount = pmax(28000, pmin(claim_amount, 1426000))) %>%
+  filter(claim_amount > 0)
+
+# Fitting Gamma GLM for Severity
+sev_model <- glm(claim_amount ~ solar_system + production_load + 
+                   energy_backup_score + safety_compliance + offset(log(exposure)), 
+                 data = filtered.bus.interupt.sev, 
+                 family = Gamma(link = "log"))
+
+avg_severity <- mean(predict(sev_model, type = "response"))
+```
+
+To project financial outcomes, we conducted a Monte-Carlo simulation with 20,000 iterations, pairing the ZINB frequency with a Gamma severity distribution (shape 1.41, scale 1,085,000), with all simulated individual claims strictly bounded between the Đ28,000 deductible and the Đ1,426,000 policy limit.
+
+```r
+set.seed(42) 
+n_sims <- 20000
+portfolio_losses <- numeric(n_sims)
+gamma_dispersion <- 0.708287 
+
+for (i in 1:n_sims) {
+  # 1. Simulate frequency from ZINB
+  sim_counts <- simulate(zinb_model_basic, nsim = 1)$sim_1
+  total_claims <- sum(sim_counts)
+  
+  # 2. Simulate severity from Gamma
+  if (total_claims > 0) {
+    shape_param <- 1 / gamma_dispersion
+    scale_param <- avg_severity * gamma_dispersion
+    
+    # Generate costs and sum for aggregate loss
+    individual_costs <- rgamma(n = total_claims, shape = shape_param, scale = scale_param)
+    portfolio_losses[i] <- sum(individual_costs)
+  } else {
+    portfolio_losses[i] <- 0
+  }
+}
+
+# Extracting key metrics
+expected_agg_loss <- mean(portfolio_losses)
+var_99 <- quantile(portfolio_losses, 0.99)
+```
+
+### Premium
+
 ## Equipment Failure
 
 ### Data Exploration
