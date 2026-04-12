@@ -208,6 +208,7 @@ var_99 <- quantile(portfolio_losses, 0.99)
 ```
 
 ### Premium
+Our financial projections, developed using the Buhlmann framework with a 22% commercial loading, highlight a significant "limit censoring" effect within the portfolio. Notably, the simulated premium for a "Catastrophic" system characterised by maximum claim amounts, was found to be slightly lower than that of an "Average" system. This paradox occurs because our policy limit effectively caps the maximum payout for extreme events, whereas systems with average frequency and severity can generate multiple smaller claims that, when aggregated, represent a higher theoretical total loss to the model. This pricing structure ensures the product remains resilient against single-event volatility while accurately reflecting the cumulative risk inherent in high-frequency operational disruptions.
 
 ## Equipment Failure
 
