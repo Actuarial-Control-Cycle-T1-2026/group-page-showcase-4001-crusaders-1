@@ -129,3 +129,9 @@ Our premium derivation started by calculating the pure premium which was the exp
 | Final premium | Đ349,478,701 | Đ201,697,686 | Đ108,890,141 | Đ660,066,528 |
 | Premium per vessel | Đ301,275 | Đ178,810 | Đ140,685 | Đ215,567 |
 | Loss ratio | 81.8% | 75.4% | 74.9% | 78.7% |
+
+## Business Interruption
+### Data Exploration
+Business Interruption (BI) presents a low-frequency, high-severity risk profile, characterised by significant tail-risk despite a high volume of non-claims.  Claim frequency is defined by a significant zero-inflation with mean of 0.10 against a variance of 0.17, where the massive peak at zero renders standard Poisson distributions inadequate and necessitates either a hurdle model or zero-inflated model approach. On the severity side, the average claim amount is approximately $1,174,300; the distribution is heavily negatively skewed with a pronounced peak at the upper policy threshold.
+
+
