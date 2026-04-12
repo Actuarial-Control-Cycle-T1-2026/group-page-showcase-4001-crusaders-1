@@ -210,6 +210,26 @@ var_99 <- quantile(portfolio_losses, 0.99)
 ### Premium
 Our financial projections, developed using the Buhlmann framework with a 22% commercial loading, highlight a significant "limit censoring" effect within the portfolio. Notably, the simulated premium for a "Catastrophic" system characterised by maximum claim amounts, was found to be slightly lower than that of an "Average" system. This paradox occurs because our policy limit effectively caps the maximum payout for extreme events, whereas systems with average frequency and severity can generate multiple smaller claims that, when aggregated, represent a higher theoretical total loss to the model. This pricing structure ensures the product remains resilient against single-event volatility while accurately reflecting the cumulative risk inherent in high-frequency operational disruptions.
 
+| Per-Unit Premium Scenarios (Projected) | Value (Đ) |
+| :--- | ---: |
+| **Safe System (Zero Claims)** | Đ16.28 |
+| **Average System** | Đ20.14 |
+| **Catastrophic System (Limit Hit)** | Đ19.81 |
+
+| Metric | Helionis | Bayesia | Oryn | Total |
+| :--- | ---: | ---: | ---: | ---: |
+| Mining units (Active) | 30 | 15 | 10 | 55 |
+| Pure premium | Đ87,752,727 | Đ43,876,364 | Đ29,250,909 | Đ160,880,000 |
+| Buhlmann credibility premium | Đ86,875,100 | Đ44,312,400 | Đ30,412,500 | Đ161,600,000 |
+| Stress loading | Đ97,295,312 | Đ49,635,112 | Đ34,061,576 | Đ180,992,000 |
+| PV discounting of claims | Đ95,349,405 | Đ48,642,410 | Đ33,380,335 | Đ177,372,150 |
+| Volatility loading | Đ102,015,120 | Đ52,056,230 | Đ35,721,550 | Đ189,792,900 |
+| Cost of capital | Đ105,320,115 | Đ54,142,320 | Đ36,482,065 | Đ195,944,500 |
+| Operational expenses | Đ5,537,288 | Đ2,811,284 | Đ1,961,428 | Đ10,310,000 |
+| Final premium | Đ110,857,403 | Đ56,953,604 | Đ38,443,493 | Đ206,254,500 |
+| Premium per unit | Đ3,695,247 | Đ3,796,907 | Đ3,844,349 | Đ3,750,082 |
+| Loss ratio | 79.2% | 77.1% | 76.1% | 78.0% |
+
 ## Equipment Failure
 
 ### Data Exploration
