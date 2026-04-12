@@ -83,11 +83,11 @@ n_sim <- 10000
 n_rows <- nrow(practice_data_freq_helionis)
 simulated_total_short_helionis <- numeric(n_sim)
 
-simulated_total_short_helionis_deepspace   <- numeric(n_sim)
-simulated_total_short_helionis_dockarc     <- numeric(n_sim)
-simulated_total_short_helionis_hardseal    <- numeric(n_sim)
-simulated_total_short_helionis_longhaul    <- numeric(n_sim)
-simulated_total_short_helionis_quantumcrate<- numeric(n_sim)
+simulated_total_short_helionis_deepspace <- numeric(n_sim)
+simulated_total_short_helionis_dockarc <- numeric(n_sim)
+simulated_total_short_helionis_hardseal <- numeric(n_sim)
+simulated_total_short_helionis_longhaul <- numeric(n_sim)
+simulated_total_short_helionis_quantumcrate <- numeric(n_sim)
 
 for (k in seq_len(n_sim)) {
   number_claims <- rpois(n_rows, practice_data_freq_helionis$lambda)
