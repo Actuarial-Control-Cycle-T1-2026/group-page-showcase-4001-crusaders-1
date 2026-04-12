@@ -802,11 +802,11 @@ n_rows <- nrow(practice_data_freq_helionis)
 
 simulated_total_short_helionis <- numeric(n_sim)
 
-simulated_total_short_helionis_deepspace   <- numeric(n_sim)
-simulated_total_short_helionis_dockarc     <- numeric(n_sim)
-simulated_total_short_helionis_hardseal    <- numeric(n_sim)
-simulated_total_short_helionis_longhaul    <- numeric(n_sim)
-simulated_total_short_helionis_quantumcrate<- numeric(n_sim)
+simulated_total_short_helionis_deepspace <- numeric(n_sim)
+simulated_total_short_helionis_dockarc <- numeric(n_sim)
+simulated_total_short_helionis_hardseal <- numeric(n_sim)
+simulated_total_short_helionis_longhaul <- numeric(n_sim)
+simulated_total_short_helionis_quantumcrate <- numeric(n_sim)
 
 for (k in seq_len(n_sim)) {
   
@@ -985,11 +985,11 @@ n_rows <- nrow(practice_data_freq_bayesia)
 simulated_total_short_bayesia <- numeric(n_sim)
 
 
-simulated_total_short_bayesia_deepspace   <- numeric(n_sim)
-simulated_total_short_bayesia_dockarc     <- numeric(n_sim)
-simulated_total_short_bayesia_hardseal    <- numeric(n_sim)
-simulated_total_short_bayesia_longhaul    <- numeric(n_sim)
-simulated_total_short_bayesia_quantumcrate<- numeric(n_sim)
+simulated_total_short_bayesia_deepspace <- numeric(n_sim)
+simulated_total_short_bayesia_dockarc <- numeric(n_sim)
+simulated_total_short_bayesia_hardseal <- numeric(n_sim)
+simulated_total_short_bayesia_longhaul <- numeric(n_sim)
+simulated_total_short_bayesia_quantumcrate <- numeric(n_sim)
 
 for (k in seq_len(n_sim)) {
   
