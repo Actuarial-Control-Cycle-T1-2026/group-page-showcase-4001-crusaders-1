@@ -274,3 +274,63 @@ To determine capital requirements, a monte-carlo simulation was run to estimate 
   <img src="equipment_failure/sensitivity_analysis.png" width="400" />
   <img src="equipment_failure/modelled_distribution.png" width="400" />
 </p>
+
+### Workers' Compensation
+Data Exploration
+CQMC operates 55 active mines across three solar systems, with a total workforce of 35,809 employees distributed proportionally by mine count: Helionis Cluster (30 mines, 19,532 workers), Bayesia System (15 mines, 9,766 workers), and Oryn Delta (10 mines, 6,509 workers). The workers' compensation claims database contains 133,398 worker-period records and 1,913 paid claims across three historical proxy systems, representing 67,875 worker-years of exposure.
+
+Claim frequency varies significantly by occupation class. Drill Operators have the highest claim rate at 4.75 per 100 worker-years, 69% above the fleet average of 2.81, reflecting sustained exposure to heavy machinery. Administrators sit at the opposite end at 1.54 per 100 worker-years. Maintenance Staff, the largest occupation class at 34.3% of the workforce records 3.17 per 100 worker-years, meaning this group drives a disproportionate share of aggregate claims through scale alone.
+
+Claim severity is highly right-skewed across all systems, with the fleet mean of Đ7,823 being 3.2× the median of Đ2,054, and the largest single claim reaching Đ193,357. The Lognormal distribution was selected over Gamma for severity modelling at all three systems on the basis of AIC margins of 218, 431, and 467 points respectively, as it better captures the extended right tail.
+
+Four worker characteristics show statistically significant relationships with claim frequency: workers with 20+ years of experience produce 43% fewer claims; a one-point improvement in safety training score reduces frequency by ~31%; a one-point increase in psychosocial stress score raises frequency by ~37%; and workers with a prior accident record generate 28% more claims.
+
+Product Offering
+GGIC recommends a single master policy with three system-specific endorsements reflecting the distinct operating environments. Key benefit structures are summarised below:
+
+| Feature | Helionis Cluster | Bayesia System | Oryn Delta |
+| :--- | :--- | :--- | :--- |
+| **Waiting period** | 7 days | None | None |
+| **Phase 1 indemnity** | 100% salary, days 1-7 | 100% salary, days 0-30 | 100% salary, days 0-14 |
+| **Phase 2 indemnity** | 80% salary, days 8-90 | 85% salary, days 31-180 | 85% salary, days 15-90 |
+| **Phase 3 indemnity** | 60% salary, days 91+ | 70% salary, days 181+ | 65% salary, days 91+ |
+| **Permanent disability** | Max(5× salary, Đ250K) | Max(5× salary, Đ250K) | Max(5× salary, Đ250K) |
+| **Special benefit** | — | Radiation illness: 3× salary | Asteroid ring hazard: 3× salary |
+
+The Đ250,000 permanent disability floor ensures every worker receives a meaningful minimum payout regardless of pay grade, correcting a structural inequity in salary-linked formulas. No waiting period applies in Bayesia and Oryn Delta given structural communication delays which would routinely deny legitimate claims that simply cannot be initiated on time.
+Standard exclusions across all systems include off-duty injuries, deliberate PPE non-compliance, pre-existing conditions not materially aggravated by work, and claims not reported within 180 days (Oryn Delta: clock starts from communications restoration).
+
+
+Modelling
+The gross pure premium per worker is built from a base pure premium multiplied by six sequential loadings: a trend factor of 1.2302 (4.23% p.a. compounded over 5 years), a 1.12 IBNR reserve to capture long-tail reporting delays, a 1.6667 commercial loading targeting a 60% loss ratio, a 1.05 catastrophe provision as a frontier surcharge, an investment income offset (10% nominal return on reserves), and a schedule modification factor that adjusts for CQMC's specific workforce risk profile relative to the historical pool using GLM coefficients for experience, stress, training quality, and accident history.
+Bühlmann credibility was applied across occupation classes to blend class-specific observed rates with the fleet-wide prior. The credibility parameter k = 254.2 worker-years, meaning a class with exactly 254 worker-years of exposure receives equal weight from its own data and the fleet prior.
+
+```r
+# Bühlmann credibility blending
+PP_class <- Z * PP_observed + (1 - Z) * PP_fleet
+# where Z = E / (E + k), k = EPV / VHM = 254.2 worker-years
+
+# Capital modelling: 50,000 Monte Carlo iterations per system
+N <- rpois(1, lambda_weighted)       # claim count from occupation-weighted
+X <- rlnorm(N, mu_adj, sigma)        # severity from adjusted LogNormal
+S <- sum(X)                          # aggregate annual loss per iteration
+```
+Capital was modelled via 50,000 Monte Carlo iterations per system, drawing claim counts from an occupation-weighted Poisson and severities from a LogNormal adjusted for environment, trend, and IBNR. The coefficient of variation rises from Helionis (0.104) to Bayesia (0.124) to Oryn Delta (0.161), reflecting decreasing data richness as we move from the most to least established system.
+
+Premium
+The cumulative premium build-up per worker is shown in the chart below. The gap between Helionis (Đ388/worker) and Bayesia (Đ586/worker) opens primarily at the environment and schedule modification stages, confirming that the differential is driven by EM radiation loadings and Bayesia's younger, more stressed workforce rather than base claim costs alone. Oryn Delta's final premium of Đ570/worker reflects its larger combined environment and schedule modification debit despite a lower base pure premium.
+
+
+| Statistic | Helionis | Bayesia | Oryn Delta | Portfolio |
+| :--- | :---: | :---: | :---: | :---: |
+| **Annual gross premium** | Đ7.574M | Đ5.726M | Đ3.708M | Đ17.008M |
+| **Expected annual loss** | Đ4.394M | Đ2.777M | Đ1.647M | Đ8.818M |
+| **Std deviation** | Đ0.455M | Đ0.345M | Đ0.265M | Đ0.786M |
+| **VaR 99%** | Đ5.625M | Đ3.727M | Đ2.392M | Đ11.74M |
+| **TVaR 99%** | Đ5.953M | Đ3.967M | Đ2.650M | Đ12.57M |
+| **Loss ratio** | 58.0% | 48.5% | 44.4% | 51.8% |
+| **Combined ratio** | 92.0% | 82.5% | 78.4% | 85.9% |
+
+The annual gross premium across all three systems amounts to Đ17.008M, with expected net revenue of Đ2.43M (at a 5.1% risk-free rate) and Đ8.19M (at a 10% investment return assumption). All three systems maintain a positive underwriting margin even at the VaR 99% level.
+
+
