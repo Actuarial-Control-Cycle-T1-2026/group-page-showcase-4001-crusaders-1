@@ -281,7 +281,16 @@ CQMC operates 55 active mines across three solar systems, with a total workforce
 
 Claim frequency varies significantly by occupation class. Drill Operators have the highest claim rate at 4.75 per 100 worker-years, 69% above the fleet average of 2.81, reflecting sustained exposure to heavy machinery. Administrators sit at the opposite end at 1.54 per 100 worker-years. Maintenance Staff, the largest occupation class at 34.3% of the workforce records 3.17 per 100 worker-years, meaning this group drives a disproportionate share of aggregate claims through scale alone.
 
+<p align="center">
+  <img src="workers_comp/claim_rate_by_occupation.png" width="400" />
+</p>
+
+
 Claim severity is highly right-skewed across all systems, with the fleet mean of Đ7,823 being 3.2× the median of Đ2,054, and the largest single claim reaching Đ193,357. The Lognormal distribution was selected over Gamma for severity modelling at all three systems on the basis of AIC margins of 218, 431, and 467 points respectively, as it better captures the extended right tail.
+
+<p align="center">
+  <img src="workers_comp/severity_distribution.png" width="400" />
+</p>
 
 Four worker characteristics show statistically significant relationships with claim frequency: workers with 20+ years of experience produce 43% fewer claims; a one-point improvement in safety training score reduces frequency by ~31%; a one-point increase in psychosocial stress score raises frequency by ~37%; and workers with a prior accident record generate 28% more claims.
 
@@ -319,6 +328,10 @@ Capital was modelled via 50,000 Monte Carlo iterations per system, drawing claim
 
 Premium
 The cumulative premium build-up per worker is shown in the chart below. The gap between Helionis (Đ388/worker) and Bayesia (Đ586/worker) opens primarily at the environment and schedule modification stages, confirming that the differential is driven by EM radiation loadings and Bayesia's younger, more stressed workforce rather than base claim costs alone. Oryn Delta's final premium of Đ570/worker reflects its larger combined environment and schedule modification debit despite a lower base pure premium.
+
+<p align="center">
+  <img src="workers_comp/premium_buildup.png" />
+</p>
 
 
 | Statistic | Helionis | Bayesia | Oryn Delta | Portfolio |
