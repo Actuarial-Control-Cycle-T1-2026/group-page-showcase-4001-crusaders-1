@@ -313,8 +313,8 @@ Our premium derivation started by calculating the pure premium which was the exp
 
 
 
-### Workers Compensation
-Data Exploration
+## Workers Compensation
+### Data Exploration
 CQMC operates 55 active mines across three solar systems, with a total workforce of 35,809 employees distributed proportionally by mine count: Helionis Cluster (30 mines, 19,532 workers), Bayesia System (15 mines, 9,766 workers), and Oryn Delta (10 mines, 6,509 workers). The workers' compensation claims database contains 133,398 worker-period records and 1,913 paid claims across three historical proxy systems, representing 67,875 worker-years of exposure.
 
 Claim frequency varies significantly by occupation class. Drill Operators have the highest claim rate at 4.75 per 100 worker-years, 69% above the fleet average of 2.81, reflecting sustained exposure to heavy machinery. Administrators sit at the opposite end at 1.54 per 100 worker-years. Maintenance Staff, the largest occupation class at 34.3% of the workforce records 3.17 per 100 worker-years, meaning this group drives a disproportionate share of aggregate claims through scale alone.
@@ -332,7 +332,7 @@ Claim severity is highly right-skewed across all systems, with the fleet mean of
 
 Four worker characteristics show statistically significant relationships with claim frequency: workers with 20+ years of experience produce 43% fewer claims; a one-point improvement in safety training score reduces frequency by ~31%; a one-point increase in psychosocial stress score raises frequency by ~37%; and workers with a prior accident record generate 28% more claims.
 
-Product Offering
+### Product Offering
 GGIC recommends a single master policy with three system-specific endorsements reflecting the distinct operating environments. Key benefit structures are summarised below:
 
 | Feature | Helionis Cluster | Bayesia System | Oryn Delta |
@@ -348,7 +348,7 @@ The Đ250,000 permanent disability floor ensures every worker receives a meaning
 Standard exclusions across all systems include off-duty injuries, deliberate PPE non-compliance, pre-existing conditions not materially aggravated by work, and claims not reported within 180 days (Oryn Delta: clock starts from communications restoration).
 
 
-Modelling
+### Modelling
 The gross pure premium per worker is built from a base pure premium multiplied by six sequential loadings: a trend factor of 1.2302 (4.23% p.a. compounded over 5 years), a 1.12 IBNR reserve to capture long-tail reporting delays, a 1.6667 commercial loading targeting a 60% loss ratio, a 1.05 catastrophe provision as a frontier surcharge, an investment income offset (10% nominal return on reserves), and a schedule modification factor that adjusts for CQMC's specific workforce risk profile relative to the historical pool using GLM coefficients for experience, stress, training quality, and accident history.
 Bühlmann credibility was applied across occupation classes to blend class-specific observed rates with the fleet-wide prior. The credibility parameter k = 254.2 worker-years, meaning a class with exactly 254 worker-years of exposure receives equal weight from its own data and the fleet prior.
 
@@ -364,7 +364,7 @@ S <- sum(X)                          # aggregate annual loss per iteration
 ```
 Capital was modelled via 50,000 Monte Carlo iterations per system, drawing claim counts from an occupation-weighted Poisson and severities from a LogNormal adjusted for environment, trend, and IBNR. The coefficient of variation rises from Helionis (0.104) to Bayesia (0.124) to Oryn Delta (0.161), reflecting decreasing data richness as we move from the most to least established system.
 
-Premium
+### Premium
 The cumulative premium build-up per worker is shown in the chart below. The gap between Helionis (Đ388/worker) and Bayesia (Đ586/worker) opens primarily at the environment and schedule modification stages, confirming that the differential is driven by EM radiation loadings and Bayesia's younger, more stressed workforce rather than base claim costs alone. Oryn Delta's final premium of Đ570/worker reflects its larger combined environment and schedule modification debit despite a lower base pure premium.
 
 <p align="center">
