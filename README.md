@@ -17,6 +17,159 @@ The 4001 Crusaders actuarial team at Galaxy General Insurance Company (GGIC) hav
 
 The following page will navigate each of the 4 hazards separately, exploring how the unique risks and challenges associated with each of them influenced our modelling choices and premium calculation. 
 
+
+## Equipment Failure
+
+### Data Exploration
+
+Analysis of the equipment failure hazard reveals various risks that CQMC will have face with their mining operations. Across all three solar systems, CQMC have a total of 4,730 assets which are prone to environmental degradation and or unforeseen damage. Based on historical data, systems similar to Oryn Delta present the highest risk, with an average risk index of 0.62 and heavy tail losses as indicated by a Kurtosis of 404 and skewness of 16.3. The Helionis Cluster and Bayesian System are both significantly less risky as seen through the risks index of 0.49 and 0.53 respectively. 
+
+<p align="center">
+  <img src="equipment_failure/severity_plot.png" width="400" />
+  <img src="equipment_failure/frequency_plot.png" width="400" />
+</p>
+
+As for the risk derived from equipment types, Quantum Bores have the highest risk with an average risk index of 0.8. The 99% expected shortfall of Đ495,958.70 further illustrates the severity of losses related to this equipment type. Due to the nature of equipment failure, taking on insurance for high-risk incidents only if the equipment is well-maintained will be an ideal consideration CQMC.
+
+<p align="center">
+  <img src="equipment_failure/severity_by_eq_plot.png" width="400" />
+  <img src="equipment_failure/claim_count_eq.png" width="400" />
+</p>
+
+### Premium Modelling
+
+For the pricing and capital modelling, various models were applied in order to effectively represent the risks associated with equipment failure. For the premium pricing, a LASSO GLM was utilised for the severity under a gamma distribution and a Poisson model for the frequency. 
+
+```r
+## Severity Model
+sev_lasso <- cv.glmnet(X_sev_train, sev_train$claim_amount, 
+                       family = Gamma(link = "log"), 
+                       alpha = 1)
+
+## Frequency Model
+freq_lasso <- cv.glmnet(X_freq_train, freq_train$claim_count, family = "poisson", 
+                        offset = log(freq_train$exposure), alpha = 1)
+```
+
+Given the high risk associated with equipment failure, it would be ideal to protect high risk equipment, hence a deductible was applied to each solar system to reduce the effect on capital by attritional claims. Furthermore, since there was no given data for the Oryn Delta and Bayesian System, Bühlmann credibility weighting was utilised to account for the approximation. After training the GLM, they were tested on an unseen subset of the data to generate pure premiums which were equivalent to the expected loss for each claim. With this, premiums were averaged by solar system and loadings were applied to obtain a gross premium. The loadings include a 5% profit load for which 2% goes towards an environmental loading and a 7% variable expense loading. This yielded a 1-year total premium of Đ44.61M, which provides coverage for all assets, both and active and idle. The 10-year premium is Đ436.75M which accounts for inflation and discount rates.
+
+
+### Capital Modelling
+
+To determine capital requirements, a monte-carlo simulation was run to estimate the yearly expected losses for each solar system. In order to achieve this, maximum likelihood estimation (MLE) was utilised to determine the theoretical distributions for severity and frequency. In all cases, the log-normal and negative binomial distributions were the best fit for each solar system. Then, 100,000 iterations of the loop were run in which there was a 1% chance of an intergalactic shock event which would increase claim severity by 5 times. Ultimately, the 99% expected shortfall is Đ129.1M and the 10-year capital is Đ420.9M. To understand the assumptions in regard to the parameters, sensitivity analysis was conducted where each variable in the simulation was adjusted to understand how capital requirements may change. From this it became evident that the impact of the joint shock factor is extremely sensitive and could be a point for revision with future data.
+
+<p align="center">
+  <img src="equipment_failure/sensitivity_analysis.png" width="400" />
+  <img src="equipment_failure/modelled_distribution.png" width="400" />
+</p>
+
+
+
+
+
+
+## Business Interruption
+### Data Exploration
+Business Interruption (BI) presents a low-frequency, high-severity risk profile, characterised by significant tail-risk despite a high volume of non-claims.  Claim frequency is defined by a significant zero-inflation with mean of 0.10 against a variance of 0.17, where the massive peak at zero renders standard Poisson distributions inadequate and necessitates either a hurdle model or zero-inflated model approach. On the severity side, the average claim amount is approximately $1,174,300; the distribution is heavily negatively skewed with a pronounced peak at the upper policy threshold.
+![Frequency Plot](bus_interruption/Frequency.png)
+![Severity Plot](bus_interruption/Severity.png)
+The most significant operational drivers appear to be the energy backup score, supply chain index, and maintenance frequency consistently emerge as significant predictors across initial modelling testing, indicating that these variables are the primary levers for managing risk volatility. A comparative segment analysis reveals a distinction in risk exposure between the analysed regions. Epsilon and Zeta exhibit nearly identical frequency and severity profiles, whereas the Helionis Cluster (HC) serves as a low-risk outlier, recording roughly 50% the total claim volume and frequency of its counterparts. This favourable performance in HC is correlated with superior operational efficiency, including the highest energy system efficiency, unit sourcing proportions, and compliance scores, even though it reports lower crew experience and maintenance turnover. While the overall company operating margin remains resilient at 31%, the data suggests that while HC benefits from lower exposure levels, the lack of a clear severity pattern across systems implies that extreme loss events remain a latent threat.
+
+### Product Offering
+Considering the highly skewed, "all-or-nothing" loss behaviour, the BI product is designed to strictly control tail risk and pricing uncertainty. Our benefit structure incorporates a Đ28,000 deductible to ensure that minor operational disruptions are retained by CQMC, preventing low impact "noise" from inflating the risk premium. The policy limit is set at Đ1,426,000 to truncate exposure to the extreme severity events that cluster at the upper threshold of the distribution. Without these rigorous controls, the underlying claims profile is too volatile to support an affordable or sustainable indemnity product.
+To further stabilise the portfolio, coverage is restricted to high-certainty triggers such as core system failures within mandated maintenance windows or documented interruptions in the Quantum-secured supply chain. Specific exclusions were necessary to mitigate moral hazard; as such, losses resulting from neglected infrastructure or maintenance falling below required benchmarks are excluded from cover. Furthermore, legal and environmental penalties from the Interstellar Court of Environmental Justice are excluded to ensure the product remains focused on operational system failures rather than regulatory liabilities. This focused framework allows GGIC to offer essential coverage while remaining protected against the most extreme loss outcomes.
+
+### Modelling
+Naive Poisson was firstly utilised for frequency modelling to explore significant covariates, however as overdispersion is realised, we selected a Zero-Inflated Negative Binomial (ZINB) frequency model with a constant zero-inflation parameter, which demonstrated superior performance in capturing the portfolio's unique risk profile. This modeling choice reflects the observation that approximately 88% of the portfolio resides in a "structural zero" state, a universal behaviour likely driven by the autonomous extraction fleets and self-healing hulls utilised across all systems. ZINB also yields lower AIC, BIC and higher likelihood than Zero-Inflated Poisson or Negative Binomial alone, whereas these statistics would be less favourable if covariates are used for the zero-inflated hurdles rather than a constant.
+
+```r
+library(glmmTMB)
+# Fitting ZINB with constant zero-inflation (ziformula = ~ 1)
+zinb_model_basic <- glmmTMB(
+  claim_count ~ solar_system + production_load + energy_backup_score + 
+    supply_chain_index + avg_crew_exp + maintenance_freq + 
+    safety_compliance + offset(log(exposure)),
+  ziformula = ~ 1,      
+  data = filtered.bus.interupt.freq,
+  family = nbinom1 # nbinom1 was selected over nbinom2 based on AIC/BIC
+)
+summary(zinb_model_basic)
+```
+
+
+For severity modelling, we employed a Gamma GLM with a log-link function, which is ideally suited for continuous, positive-valued insurance data. Although the raw data exhibits heavy negative skewness due to the Đ1,426,000 policy limit "clumping" the results, the Gamma distribution (shape parameter 1.41, scale parameter 1,085,000) provides a mathematically robust framework for capturing the underlying attritional loss behaviour. To ensure the model accurately reflects the actual risk transfer, the data was strictly bounded between the Đ28,000 deductible and the Đ1,426,000 policy limit prior to fitting. The resulting dispersion parameter (0.708) was critical in parameterising our Monte Carlo simulation, allowing us to account for the variance nature of BI events while ensuring that projected costs remain sensitive to exposure and safety compliance levels across Epsilon, Zeta, and the HC.
+
+```r
+# Pre-processing: Bounding claims by deductible and policy limit
+filtered.bus.interupt.sev <- bus.interupt.sev %>%
+  mutate(claim_amount = pmax(28000, pmin(claim_amount, 1426000))) %>%
+  filter(claim_amount > 0)
+
+# Fitting Gamma GLM for Severity
+sev_model <- glm(claim_amount ~ solar_system + production_load + 
+                   energy_backup_score + safety_compliance + offset(log(exposure)), 
+                 data = filtered.bus.interupt.sev, 
+                 family = Gamma(link = "log"))
+
+avg_severity <- mean(predict(sev_model, type = "response"))
+```
+
+To project financial outcomes, we conducted a Monte-Carlo simulation with 20,000 iterations, pairing the ZINB frequency with a Gamma severity distribution (shape 1.41, scale 1,085,000), with all simulated individual claims strictly bounded between the Đ28,000 deductible and the Đ1,426,000 policy limit.
+
+```r
+set.seed(42) 
+n_sims <- 20000
+portfolio_losses <- numeric(n_sims)
+gamma_dispersion <- 0.708287 
+
+for (i in 1:n_sims) {
+  # 1. Simulate frequency from ZINB
+  sim_counts <- simulate(zinb_model_basic, nsim = 1)$sim_1
+  total_claims <- sum(sim_counts)
+  
+  # 2. Simulate severity from Gamma
+  if (total_claims > 0) {
+    shape_param <- 1 / gamma_dispersion
+    scale_param <- avg_severity * gamma_dispersion
+    
+    # Generate costs and sum for aggregate loss
+    individual_costs <- rgamma(n = total_claims, shape = shape_param, scale = scale_param)
+    portfolio_losses[i] <- sum(individual_costs)
+  } else {
+    portfolio_losses[i] <- 0
+  }
+}
+
+# Extracting key metrics
+expected_agg_loss <- mean(portfolio_losses)
+var_99 <- quantile(portfolio_losses, 0.99)
+```
+
+### Premium
+Our financial projections, developed using the Buhlmann framework with a 22% commercial loading, highlight a significant "limit censoring" effect within the portfolio. Notably, the simulated premium for a "Catastrophic" system characterised by maximum claim amounts, was found to be slightly lower than that of an "Average" system. This paradox occurs because our policy limit effectively caps the maximum payout for extreme events, whereas systems with average frequency and severity can generate multiple smaller claims that, when aggregated, represent a higher theoretical total loss to the model. This pricing structure ensures the product remains resilient against single-event volatility while accurately reflecting the cumulative risk inherent in high-frequency operational disruptions.
+
+| Per-Unit Premium Scenarios (Projected) | Value (Đ) |
+| :--- | ---: |
+| **Safe System (Zero Claims)** | Đ16.28 |
+| **Average System** | Đ20.14 |
+| **Catastrophic System (Limit Hit)** | Đ19.81 |
+
+| Metric | Helionis | Bayesia | Oryn | Total |
+| :--- | ---: | ---: | ---: | ---: |
+| Mining units (Active) | 30 | 15 | 10 | 55 |
+| Pure premium | Đ87,752,727 | Đ43,876,364 | Đ29,250,909 | Đ160,880,000 |
+| Buhlmann credibility premium | Đ86,875,100 | Đ44,312,400 | Đ30,412,500 | Đ161,600,000 |
+| Stress loading | Đ97,295,312 | Đ49,635,112 | Đ34,061,576 | Đ180,992,000 |
+| PV discounting of claims | Đ95,349,405 | Đ48,642,410 | Đ33,380,335 | Đ177,372,150 |
+| Volatility loading | Đ102,015,120 | Đ52,056,230 | Đ35,721,550 | Đ189,792,900 |
+| Cost of capital | Đ105,320,115 | Đ54,142,320 | Đ36,482,065 | Đ195,944,500 |
+| Operational expenses | Đ5,537,288 | Đ2,811,284 | Đ1,961,428 | Đ10,310,000 |
+| Final premium | Đ110,857,403 | Đ56,953,604 | Đ38,443,493 | Đ206,254,500 |
+| Premium per unit | Đ3,695,247 | Đ3,796,907 | Đ3,844,349 | Đ3,750,082 |
+| Loss ratio | 79.2% | 77.1% | 76.1% | 78.0% |
+
+
+
 ## Cargo Loss
 ### Data Exploration
 Cargo loss presents an extremely challenging and risky hazard from both a frequency and severity perspective. Historical shipment claims reveal that 18.23% of shipments resulted in at least 1 claim with claim counts ranging up to 5 per shipment. This is coupled with the high claim severity, with the average and median claim loss being Đ7.8M and Đ382k respectively. The histogram of claim size severity also illustrates how it has a highly skewed bimodal distribution. 
@@ -130,150 +283,8 @@ Our premium derivation started by calculating the pure premium which was the exp
 | Premium per vessel | Đ301,275 | Đ178,810 | Đ140,685 | Đ215,567 |
 | Loss ratio | 81.8% | 75.4% | 74.9% | 78.7% |
 
-## Business Interruption
-### Data Exploration
-Business Interruption (BI) presents a low-frequency, high-severity risk profile, characterised by significant tail-risk despite a high volume of non-claims.  Claim frequency is defined by a significant zero-inflation with mean of 0.10 against a variance of 0.17, where the massive peak at zero renders standard Poisson distributions inadequate and necessitates either a hurdle model or zero-inflated model approach. On the severity side, the average claim amount is approximately $1,174,300; the distribution is heavily negatively skewed with a pronounced peak at the upper policy threshold.
-![Frequency Plot](bus_interruption/Frequency.png)
-![Severity Plot](bus_interruption/Severity.png)
-The most significant operational drivers appear to be the energy backup score, supply chain index, and maintenance frequency consistently emerge as significant predictors across initial modelling testing, indicating that these variables are the primary levers for managing risk volatility. A comparative segment analysis reveals a distinction in risk exposure between the analysed regions. Epsilon and Zeta exhibit nearly identical frequency and severity profiles, whereas the Helionis Cluster (HC) serves as a low-risk outlier, recording roughly 50% the total claim volume and frequency of its counterparts. This favourable performance in HC is correlated with superior operational efficiency, including the highest energy system efficiency, unit sourcing proportions, and compliance scores, even though it reports lower crew experience and maintenance turnover. While the overall company operating margin remains resilient at 31%, the data suggests that while HC benefits from lower exposure levels, the lack of a clear severity pattern across systems implies that extreme loss events remain a latent threat.
-
-### Product Offering
-Considering the highly skewed, "all-or-nothing" loss behaviour, the BI product is designed to strictly control tail risk and pricing uncertainty. Our benefit structure incorporates a Đ28,000 deductible to ensure that minor operational disruptions are retained by CQMC, preventing low impact "noise" from inflating the risk premium. The policy limit is set at Đ1,426,000 to truncate exposure to the extreme severity events that cluster at the upper threshold of the distribution. Without these rigorous controls, the underlying claims profile is too volatile to support an affordable or sustainable indemnity product.
-To further stabilise the portfolio, coverage is restricted to high-certainty triggers such as core system failures within mandated maintenance windows or documented interruptions in the Quantum-secured supply chain. Specific exclusions were necessary to mitigate moral hazard; as such, losses resulting from neglected infrastructure or maintenance falling below required benchmarks are excluded from cover. Furthermore, legal and environmental penalties from the Interstellar Court of Environmental Justice are excluded to ensure the product remains focused on operational system failures rather than regulatory liabilities. This focused framework allows GGIC to offer essential coverage while remaining protected against the most extreme loss outcomes.
-
-### Modelling
-Naive Poisson was firstly utilised for frequency modelling to explore significant covariates, however as overdispersion is realised, we selected a Zero-Inflated Negative Binomial (ZINB) frequency model with a constant zero-inflation parameter, which demonstrated superior performance in capturing the portfolio's unique risk profile. This modeling choice reflects the observation that approximately 88% of the portfolio resides in a "structural zero" state, a universal behaviour likely driven by the autonomous extraction fleets and self-healing hulls utilised across all systems. ZINB also yields lower AIC, BIC and higher likelihood than Zero-Inflated Poisson or Negative Binomial alone, whereas these statistics would be less favourable if covariates are used for the zero-inflated hurdles rather than a constant.
-
-```r
-library(glmmTMB)
-# Fitting ZINB with constant zero-inflation (ziformula = ~ 1)
-zinb_model_basic <- glmmTMB(
-  claim_count ~ solar_system + production_load + energy_backup_score + 
-    supply_chain_index + avg_crew_exp + maintenance_freq + 
-    safety_compliance + offset(log(exposure)),
-  ziformula = ~ 1,      
-  data = filtered.bus.interupt.freq,
-  family = nbinom1 # nbinom1 was selected over nbinom2 based on AIC/BIC
-)
-summary(zinb_model_basic)
-```
 
 
-For severity modelling, we employed a Gamma GLM with a log-link function, which is ideally suited for continuous, positive-valued insurance data. Although the raw data exhibits heavy negative skewness due to the Đ1,426,000 policy limit "clumping" the results, the Gamma distribution (shape parameter 1.41, scale parameter 1,085,000) provides a mathematically robust framework for capturing the underlying attritional loss behaviour. To ensure the model accurately reflects the actual risk transfer, the data was strictly bounded between the Đ28,000 deductible and the Đ1,426,000 policy limit prior to fitting. The resulting dispersion parameter (0.708) was critical in parameterising our Monte Carlo simulation, allowing us to account for the variance nature of BI events while ensuring that projected costs remain sensitive to exposure and safety compliance levels across Epsilon, Zeta, and the HC.
-
-```r
-# Pre-processing: Bounding claims by deductible and policy limit
-filtered.bus.interupt.sev <- bus.interupt.sev %>%
-  mutate(claim_amount = pmax(28000, pmin(claim_amount, 1426000))) %>%
-  filter(claim_amount > 0)
-
-# Fitting Gamma GLM for Severity
-sev_model <- glm(claim_amount ~ solar_system + production_load + 
-                   energy_backup_score + safety_compliance + offset(log(exposure)), 
-                 data = filtered.bus.interupt.sev, 
-                 family = Gamma(link = "log"))
-
-avg_severity <- mean(predict(sev_model, type = "response"))
-```
-
-To project financial outcomes, we conducted a Monte-Carlo simulation with 20,000 iterations, pairing the ZINB frequency with a Gamma severity distribution (shape 1.41, scale 1,085,000), with all simulated individual claims strictly bounded between the Đ28,000 deductible and the Đ1,426,000 policy limit.
-
-```r
-set.seed(42) 
-n_sims <- 20000
-portfolio_losses <- numeric(n_sims)
-gamma_dispersion <- 0.708287 
-
-for (i in 1:n_sims) {
-  # 1. Simulate frequency from ZINB
-  sim_counts <- simulate(zinb_model_basic, nsim = 1)$sim_1
-  total_claims <- sum(sim_counts)
-  
-  # 2. Simulate severity from Gamma
-  if (total_claims > 0) {
-    shape_param <- 1 / gamma_dispersion
-    scale_param <- avg_severity * gamma_dispersion
-    
-    # Generate costs and sum for aggregate loss
-    individual_costs <- rgamma(n = total_claims, shape = shape_param, scale = scale_param)
-    portfolio_losses[i] <- sum(individual_costs)
-  } else {
-    portfolio_losses[i] <- 0
-  }
-}
-
-# Extracting key metrics
-expected_agg_loss <- mean(portfolio_losses)
-var_99 <- quantile(portfolio_losses, 0.99)
-```
-
-### Premium
-Our financial projections, developed using the Buhlmann framework with a 22% commercial loading, highlight a significant "limit censoring" effect within the portfolio. Notably, the simulated premium for a "Catastrophic" system characterised by maximum claim amounts, was found to be slightly lower than that of an "Average" system. This paradox occurs because our policy limit effectively caps the maximum payout for extreme events, whereas systems with average frequency and severity can generate multiple smaller claims that, when aggregated, represent a higher theoretical total loss to the model. This pricing structure ensures the product remains resilient against single-event volatility while accurately reflecting the cumulative risk inherent in high-frequency operational disruptions.
-
-| Per-Unit Premium Scenarios (Projected) | Value (Đ) |
-| :--- | ---: |
-| **Safe System (Zero Claims)** | Đ16.28 |
-| **Average System** | Đ20.14 |
-| **Catastrophic System (Limit Hit)** | Đ19.81 |
-
-| Metric | Helionis | Bayesia | Oryn | Total |
-| :--- | ---: | ---: | ---: | ---: |
-| Mining units (Active) | 30 | 15 | 10 | 55 |
-| Pure premium | Đ87,752,727 | Đ43,876,364 | Đ29,250,909 | Đ160,880,000 |
-| Buhlmann credibility premium | Đ86,875,100 | Đ44,312,400 | Đ30,412,500 | Đ161,600,000 |
-| Stress loading | Đ97,295,312 | Đ49,635,112 | Đ34,061,576 | Đ180,992,000 |
-| PV discounting of claims | Đ95,349,405 | Đ48,642,410 | Đ33,380,335 | Đ177,372,150 |
-| Volatility loading | Đ102,015,120 | Đ52,056,230 | Đ35,721,550 | Đ189,792,900 |
-| Cost of capital | Đ105,320,115 | Đ54,142,320 | Đ36,482,065 | Đ195,944,500 |
-| Operational expenses | Đ5,537,288 | Đ2,811,284 | Đ1,961,428 | Đ10,310,000 |
-| Final premium | Đ110,857,403 | Đ56,953,604 | Đ38,443,493 | Đ206,254,500 |
-| Premium per unit | Đ3,695,247 | Đ3,796,907 | Đ3,844,349 | Đ3,750,082 |
-| Loss ratio | 79.2% | 77.1% | 76.1% | 78.0% |
-
-## Equipment Failure
-
-### Data Exploration
-
-Analysis of the equipment failure hazard reveals various risks that CQMC will have face with their mining operations. Across all three solar systems, CQMC have a total of 4,730 assets which are prone to environmental degradation and or unforeseen damage. Based on historical data, systems similar to Oryn Delta present the highest risk, with an average risk index of 0.62 and heavy tail losses as indicated by a Kurtosis of 404 and skewness of 16.3. The Helionis Cluster and Bayesian System are both significantly less risky as seen through the risks index of 0.49 and 0.53 respectively. 
-
-<p align="center">
-  <img src="equipment_failure/severity_plot.png" width="400" />
-  <img src="equipment_failure/frequency_plot.png" width="400" />
-</p>
-
-As for the risk derived from equipment types, Quantum Bores have the highest risk with an average risk index of 0.8. The 99% expected shortfall of Đ495,958.70 further illustrates the severity of losses related to this equipment type. Due to the nature of equipment failure, taking on insurance for high-risk incidents only if the equipment is well-maintained will be an ideal consideration CQMC.
-
-<p align="center">
-  <img src="equipment_failure/severity_by_eq_plot.png" width="400" />
-  <img src="equipment_failure/claim_count_eq.png" width="400" />
-</p>
-
-### Premium Modelling
-
-For the pricing and capital modelling, various models were applied in order to effectively represent the risks associated with equipment failure. For the premium pricing, a LASSO GLM was utilised for the severity under a gamma distribution and a Poisson model for the frequency. 
-
-```r
-## Severity Model
-sev_lasso <- cv.glmnet(X_sev_train, sev_train$claim_amount, 
-                       family = Gamma(link = "log"), 
-                       alpha = 1)
-
-## Frequency Model
-freq_lasso <- cv.glmnet(X_freq_train, freq_train$claim_count, family = "poisson", 
-                        offset = log(freq_train$exposure), alpha = 1)
-```
-
-Given the high risk associated with equipment failure, it would be ideal to protect high risk equipment, hence a deductible was applied to each solar system to reduce the effect on capital by attritional claims. Furthermore, since there was no given data for the Oryn Delta and Bayesian System, Bühlmann credibility weighting was utilised to account for the approximation. After training the GLM, they were tested on an unseen subset of the data to generate pure premiums which were equivalent to the expected loss for each claim. With this, premiums were averaged by solar system and loadings were applied to obtain a gross premium. The loadings include a 5% profit load for which 2% goes towards an environmental loading and a 7% variable expense loading. This yielded a 1-year total premium of Đ44.61M, which provides coverage for all assets, both and active and idle. The 10-year premium is Đ436.75M which accounts for inflation and discount rates.
-
-
-### Capital Modelling
-
-To determine capital requirements, a monte-carlo simulation was run to estimate the yearly expected losses for each solar system. In order to achieve this, maximum likelihood estimation (MLE) was utilised to determine the theoretical distributions for severity and frequency. In all cases, the log-normal and negative binomial distributions were the best fit for each solar system. Then, 100,000 iterations of the loop were run in which there was a 1% chance of an intergalactic shock event which would increase claim severity by 5 times. Ultimately, the 99% expected shortfall is Đ129.1M and the 10-year capital is Đ420.9M. To understand the assumptions in regard to the parameters, sensitivity analysis was conducted where each variable in the simulation was adjusted to understand how capital requirements may change. From this it became evident that the impact of the joint shock factor is extremely sensitive and could be a point for revision with future data.
-
-<p align="center">
-  <img src="equipment_failure/sensitivity_analysis.png" width="400" />
-  <img src="equipment_failure/modelled_distribution.png" width="400" />
-</p>
 
 ### Workers' Compensation
 Data Exploration
