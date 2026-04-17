@@ -4,6 +4,25 @@ Team: 4001 Crusaders
 
 Members: Niklesh Anantha-Siva, Armaan Banga, Toby Mufford, Huy Pham, Vatsal Sharma
 
+## Table of Contents
+
+[Project Summary](#project-summary)
+
+[Equipment Failure](#equipment-failure)
+
+[Business Interruption](#business-interruption)
+
+[Cargo Loss](#cargo-loss)
+
+[Workers' Compensation](#workers-compensation)
+
+[Assumptions](#assumptions)
+
+[Data and Data Limitations](#data-and-data-limitations)
+
+[Final Report](#final-report)
+
+
 ## Project Summary
 
 The 4001 Crusaders actuarial team at Galaxy General Insurance Company (GGIC) have been given the opportunity to develop an insurance portfolio for Cosmic Quarry Mining Corporation (CQMC). The proposed insurance products account for the risks associated with CQMC's operations which are reflected in each of the hazards covered:
@@ -53,6 +72,14 @@ freq_lasso <- cv.glmnet(X_freq_train, freq_train$claim_count, family = "poisson"
 
 Given the high risk associated with equipment failure, it would be ideal to protect high risk equipment, hence a deductible was applied to each solar system to reduce the effect on capital by attritional claims. Furthermore, since there was no given data for the Oryn Delta and Bayesian System, Bühlmann credibility weighting was utilised to account for the approximation. After training the GLM, they were tested on an unseen subset of the data to generate pure premiums which were equivalent to the expected loss for each claim. With this, premiums were averaged by solar system and loadings were applied to obtain a gross premium. The loadings include a 5% profit load for which 2% goes towards an environmental loading and a 7% variable expense loading. This yielded a 1-year total premium of Đ44.61M, which provides coverage for all assets, both and active and idle. The 10-year premium is Đ436.75M which accounts for inflation and discount rates.
 
+| Statistic | Portfolio |
+| :--- | :---: |
+| **Annual gross premium** | Đ44.61M | 
+| **Expected annual loss** | Đ26.73M | 
+| **Std deviation** | Đ10.38M | 
+| **VaR 99%** | Đ33.52M | 
+| **ES 99%** | Đ128.143M |
+| **Loss ratio** | 59.99% |
 
 ### Capital Modelling
 
@@ -286,7 +313,7 @@ Our premium derivation started by calculating the pure premium which was the exp
 
 
 
-### Workers' Compensation
+### Workers Compensation
 Data Exploration
 CQMC operates 55 active mines across three solar systems, with a total workforce of 35,809 employees distributed proportionally by mine count: Helionis Cluster (30 mines, 19,532 workers), Bayesia System (15 mines, 9,766 workers), and Oryn Delta (10 mines, 6,509 workers). The workers' compensation claims database contains 133,398 worker-period records and 1,913 paid claims across three historical proxy systems, representing 67,875 worker-years of exposure.
 
@@ -357,4 +384,36 @@ The cumulative premium build-up per worker is shown in the chart below. The gap 
 
 The annual gross premium across all three systems amounts to Đ17.008M, with expected net revenue of Đ2.43M (at a 5.1% risk-free rate) and Đ8.19M (at a 10% investment return assumption). All three systems maintain a positive underwriting margin even at the VaR 99% level.
 
+## Assumptions
 
+During the modelling process and report construction, various assumptions had to be made in regards to the data and overall project context. While the assumptions simplified the modelling process it is important to monitor the assumptions and ensure they hold when you data and information comes in. The following tables lists common assumptions faced.
+
+| **Assumption**                                                  | **Rationale**                                                                                 | **Hazard Affected** |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------- |
+| Stationary & independence of severity & frequency distributions | Provides a stable baseline for long-term modelling despite not having yearly data             | All                 |
+| Constant inflation rate                                         | Assuming an average inflation rate for long-term modelling due to the lack of data            | All                 |
+| Linear business growth                                          | The 25% and 15% 10 year growth has no specific data to justify a non-linear growth pattern    | All                 | 
+| Fixed permanent disability benefit floor                        | A floor was of Đ250,000 was assumed to ensure equity                                          | WC                  |
+| Constant credibility weighting                                  | A constant weighting decided based on judgement due to the lack of new data                   | EF                  |
+| Policy constraints are strictly adhered to                      | Simplifies the modelling where exclusions are not accounted for in the model                  | CL                  |
+| Stationarity of zero-inflation parameter                        | Stationarity is used due to a lack of current and relevant data                               | BI                  |
+
+
+## Data and Data Limitations
+
+The provided datasets in relation to GGIC's historical claims and CQMC's personnel and inventory were used for the modelling process. While providing a strong foundation for the models, various inconsistencies and issues with the data served to be problematic for the accuracy of the pricing and capital models. All datasets required intensive cleansing in order to be used within models, this involved restricting values to respective ranges provided in the datasheet and or modifying strings with extra characters at the end. Furthermore, the below table lists some of the limitations faced with the data, and their overall impact on the project.
+
+| **Limitation** | **Impact** | **Severity** | **Mitigation** |
+| ----------------------------------------------- | ------------------------------------------------------------------------------ | ------------ | ------------------------------------------------------- |
+| No claim data for Bayesian System or Oryn Delta | Requires using Zeta and Epsilon as proxy solar systems | High | Bühlmann Credibility, Monte-Carlo simulation |
+| Historical range deviations | Useable data size was reduced by 10% | Low | Data cleaning & Exclusion of rows |
+| Lack of time-based data | Unable to determine time-based trends in claims | High | Assumed stationarity and annual reviews to be conducted |
+| Extreme claim severities in cargo loss | Skewed models heavily to the tail end | High | Inclusion of a Policy limit |
+| Qualitative bias | Lack of data required professional judgement to evaluate certain model aspects | Moderate | Stress testing & Covariate adjustment |
+| Missing data variables/levels | Unable to capture significant variables in modelling | Low | Binomial simulation and proxy adjustments |
+
+## Final Report
+
+The following is a link to the final report:
+
+[Report](4001_report.pdf)
